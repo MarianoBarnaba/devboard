@@ -39,6 +39,7 @@ When the user says "open devboard":
 - If already running, tell the user "Devboard is already running at http://localhost:${assignedPort}"
 - If not running, start it with:
   Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '.\\devboard'; npm run dev"
+- npm run dev automatically pulls the latest version from GitHub before starting
 - Tell the user "Devboard is running at http://localhost:${assignedPort}"
 
 When the user says "close devboard" or "stop devboard":

@@ -77,6 +77,8 @@ When the user says "open devboard", "start devboard", or "launch devboard":
   "Devboard is already running at http://localhost:[port]" and do not start a new one
 - If no devboard is running, start it with:
   Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '.\devboard'; npm run dev"
+- npm run dev automatically pulls the latest version from GitHub before starting,
+  so the board is always up to date
 - Vite will auto-select an available port if 5173 is taken — read the terminal
   output to confirm which port it started on and tell the user
   "Devboard is running at http://localhost:[port]"
