@@ -10,5 +10,8 @@ const port = existsSync(portFile) ? parseInt(readFileSync(portFile, 'utf8').trim
 
 export default defineConfig({
   plugins: [react()],
-  server: { port, strictPort: true },
+  // strictPort: false → if `port` is already taken, Vite auto-increments
+  // (5173 → 5174 → …) instead of crashing. The `.devboard-port` value is the
+  // preferred starting port; the actual port is printed to the terminal on start.
+  server: { port, strictPort: false },
 })

@@ -1,7 +1,7 @@
 # Devboard
 
 This is a portable kanban board app for tracking project progress.
-Current version: 0.5.1
+Current version: 0.5.2
 
 ## Version tracking
 - Version format: MAJOR.MINOR.PATCH
@@ -76,16 +76,23 @@ RULE: When the user says "open devboard", "start devboard", or "launch devboard"
   Test-Path ".\devboard\node_modules"
 - If node_modules is missing, run npm install first:
   Start-Process powershell -ArgumentList "-NoExit -Command `"cd F:\github\mailboard\devboard; npm install`"" -Wait
-- Then launch it in a separate window:
-  Start-Process powershell -ArgumentList "-NoExit -Command `"cd F:\github\mailboard\devboard; npm run dev`""
+- Then launch it in a separate window, teeing Vite's output to a log file so the
+  actual port can be read back (strictPort is false, so Vite may auto-increment
+  past 5173 if it is taken):
+  Start-Process powershell -ArgumentList "-NoExit -Command `"cd F:\github\mailboard\devboard; npm run dev 2>&1 | Tee-Object -FilePath `$env:TEMP\devboard-dev.log`""
 - If the project path is different, use the path of the current project's devboard folder
-- After running it, say: "Devboard is running at http://localhost:5173"
+- After launching, read the actual port from the log instead of assuming 5173.
+  Wait briefly for Vite to boot, then parse the "Local:" line it prints:
+  Start-Sleep -Seconds 3; Select-String -Path "$env:TEMP\devboard-dev.log" -Pattern "Local:\s+http://localhost:(\d+)" | Select-Object -Last 1
+  The captured group is the real port. If the log has no match yet, wait and re-check.
+- Report that actual port, e.g.: "Devboard is running at http://localhost:<port>"
 - Do NOT open the browser — just tell the user the URL
 - Do NOT fall back to asking the user to run anything
 
 When the user says "close devboard" or "stop devboard":
-1. Find the PID using: netstat -ano | findstr :5173
-2. Kill it with: Stop-Process -Id [PID] -Force
+1. Find the actual port first (parse the log as above, or check the URL you reported)
+2. Find the PID using: netstat -ano | findstr :<port>
+3. Kill it with: Stop-Process -Id [PID] -Force
 
 ### Sync behavior
 The board updates automatically every time it starts — `npm run dev` runs `git pull`
