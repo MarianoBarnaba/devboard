@@ -58,7 +58,7 @@ When the user asks to update the board, or when we complete or start a task:
 Keep the board in sync with any roadmap or task tracking files in this project.
 Never ask the user to copy/paste anything manually. Always edit files directly.
 
-To get the latest devboard: git submodule update --remote devboard
+The board updates automatically every time it starts via git pull inside npm run dev.
 `;
 
 // --- Inject into parent CLAUDE.md ---

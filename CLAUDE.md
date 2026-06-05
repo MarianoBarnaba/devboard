@@ -1,7 +1,7 @@
 # Devboard
 
 This is a portable kanban board app for tracking project progress.
-Current version: 0.5.0
+Current version: 0.5.1
 
 ## Version tracking
 - Version format: MAJOR.MINOR.PATCH
@@ -26,9 +26,11 @@ Always end your response with a commit summary block like this:
 The user will copy this as the commit description in GitHub Desktop.
 
 ## Auto-update across projects
-Add a script called sync.js at the root of devboard that does the following:
+The board updates automatically every time it starts via git pull inside npm run dev.
+
+The sync.js script does the following:
 - Reads the list of known project paths from a file called .devboard-projects (one path per line)
-- For each path, runs: git submodule update --remote devboard
+- For each path, confirms the devboard folder is present
 - Logs success or failure for each project
 
 Add a "sync" script to package.json:
@@ -86,11 +88,7 @@ When the user says "close devboard" or "stop devboard":
 2. Kill it with: Stop-Process -Id [PID] -Force
 
 ### Sync behavior
-After every `git push` from the devboard repo, a post-push hook automatically runs
-`git submodule update --remote devboard` in each project listed in .devboard-projects,
-keeping all linked projects up to date.
+The board updates automatically every time it starts — `npm run dev` runs `git pull`
+before launching Vite, so the latest version is always fetched on startup.
 
-Collaborators who don't have the hook can sync manually:
-```
-git submodule update --remote devboard
-```
+No manual sync step is needed. Just run the board and it stays up to date.
