@@ -1,7 +1,7 @@
 # Devboard
 
 This is a portable kanban board app for tracking project progress.
-Current version: 0.5.2
+Current version: 0.6.0
 
 ## Version tracking
 - Version format: MAJOR.MINOR.PATCH

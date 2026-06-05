@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname, resolve } from 'path';
+import { join, dirname, resolve, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
@@ -25,6 +25,14 @@ while (usedPorts.includes(assignedPort)) assignedPort++;
 
 writeFileSync(portFilePath, String(assignedPort), 'utf8');
 console.log(`Assigned port ${assignedPort} to this devboard instance.`);
+
+// --- Per-project config (drives the isolated localStorage key in App.jsx) ---
+// projectName = name of the parent project folder (e.g. "crateforge", "mailboard").
+// Written WITHOUT a BOM (Node's utf8) so the browser's fetch().json() parses cleanly.
+const projectName = basename(parentDir);
+const configFilePath = join(__dirname, '.devboard-config.json');
+writeFileSync(configFilePath, JSON.stringify({ projectName }, null, 2) + '\n', 'utf8');
+console.log(`Wrote .devboard-config.json (projectName: "${projectName}").`);
 
 // --- Injected CLAUDE.md block ---
 const devboardBlock = `

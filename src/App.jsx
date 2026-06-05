@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const VERSION = "0.5.2";
+const VERSION = "0.6.0";
 
 const COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
 
@@ -21,7 +21,12 @@ const TAG_OPTIONS = [
   { label: "Chore",    color: "#8a8880", bg: "#1e1e1c" },
 ];
 
-const STORAGE_KEY = "devboard-v1";
+// Storage is namespaced per project so each project's board data is isolated.
+// The project name is read at runtime from /.devboard-config.json (written by
+// setup.js). Until that resolves — or if it's missing — we fall back to this key.
+const FALLBACK_STORAGE_KEY = "devboard-default-v1";
+const storageKeyFor = (projectName) =>
+  projectName ? `devboard-${projectName}-v1` : FALLBACK_STORAGE_KEY;
 
 const defaultCards = [
   // Phase 1 — Foundation
@@ -392,19 +397,41 @@ export default function DevBoard() {
   const [view, setView]     = useState("kanban");
   const [modal, setModal]   = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [projectName, setProjectName] = useState(null);
+
+  const storageKey = storageKeyFor(projectName);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) try {
-      const parsed = JSON.parse(saved);
-      setCards(parsed.map(c => ({ phase: 2, ...c })));
-    } catch {}
-    setLoaded(true);
+    let cancelled = false;
+    (async () => {
+      // Resolve the project name from config before loading, so we read from the
+      // correct namespaced key on first paint (no flash of the fallback board).
+      let name = null;
+      try {
+        const res = await fetch("/.devboard-config.json", { cache: "no-store" });
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && typeof cfg.projectName === "string" && cfg.projectName.trim()) {
+            name = cfg.projectName.trim();
+          }
+        }
+      } catch {}
+      if (cancelled) return;
+      setProjectName(name);
+
+      const saved = localStorage.getItem(storageKeyFor(name));
+      if (saved) try {
+        const parsed = JSON.parse(saved);
+        setCards(parsed.map(c => ({ phase: 2, ...c })));
+      } catch {}
+      setLoaded(true);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const persist = (newCards) => {
     setCards(newCards);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newCards));
+    localStorage.setItem(storageKey, JSON.stringify(newCards));
   };
 
   const handleSave = ({ title, col, tags, phase }) => {
@@ -444,7 +471,9 @@ export default function DevBoard() {
               <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", color: "#2a7a5a", letterSpacing: "0.15em", fontWeight: 700, textTransform: "uppercase" }}>Dev Board</span>
               {!loaded && <span style={{ fontSize: 10, color: "#3a5a40", fontFamily: "'DM Mono', monospace" }}>loading…</span>}
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 600, color: "#d4e0d0", marginTop: 2, letterSpacing: "-0.02em" }}>Project Board</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: "#d4e0d0", marginTop: 2, letterSpacing: "-0.02em" }}>
+              {projectName ? `${projectName} — Board` : "Project Board"}
+            </h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ display: "flex", background: "#111512", border: "1px solid #1e2a22", borderRadius: 8, padding: 3, gap: 2 }}>
