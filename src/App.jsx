@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+const VERSION = "0.5.0";
+
 const COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
 
 const PHASES = [
@@ -496,6 +498,15 @@ export default function DevBoard() {
           onClose={() => setModal(null)}
         />
       )}
+
+      <div style={{
+        position: "fixed", bottom: 10, right: 14,
+        fontSize: 10, color: "#333",
+        fontFamily: "'DM Mono', monospace",
+        letterSpacing: "0.08em"
+      }}>
+        v{VERSION}
+      </div>
     </>
   );
 }
