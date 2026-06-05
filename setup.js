@@ -33,14 +33,12 @@ This project has a kanban board at ./devboard/src/App.jsx.
 Start it by saying: "open devboard"
 
 RULE: When the user says "open devboard", "start devboard", or "launch devboard":
-- You MUST run the command yourself using a tool call
-- You MUST NOT tell the user to run a command
-- You MUST NOT suggest a command for the user to copy/paste
-- You MUST NOT say "run this in your terminal"
-- Use the Bash or PowerShell tool to execute this directly:
-  cd devboard && npm run dev
+- You MUST start the dev server yourself, do not ask the user to do it
+- Use this exact PowerShell command to launch it in a separate window:
+  Start-Process powershell -ArgumentList "-NoExit -Command \`"cd ${join(parentDir, 'devboard')}; npm run dev\`""
 - After running it, say: "Devboard is running at http://localhost:${assignedPort}"
-- If the port is already in use, say: "Devboard is already running at http://localhost:${assignedPort}"
+- Do NOT open the browser — just tell the user the URL
+- Do NOT fall back to asking the user to run anything
 
 When the user says "close devboard" or "stop devboard":
 1. Find the PID using: netstat -ano | findstr :${assignedPort}
