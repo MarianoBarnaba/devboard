@@ -32,15 +32,15 @@ const devboardBlock = `
 This project has a kanban board at ./devboard/src/App.jsx.
 Start it by saying: "open devboard"
 
-When the user says "open devboard":
-- DO NOT tell the user to run a command themselves
-- First check if devboard is already running:
-  netstat -ano | findstr :${assignedPort}
-- If already running, tell the user "Devboard is already running at http://localhost:${assignedPort}"
-- If not running, start it with:
-  Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '.\\devboard'; npm run dev"
-- npm run dev automatically pulls the latest version from GitHub before starting
-- Tell the user "Devboard is running at http://localhost:${assignedPort}"
+RULE: When the user says "open devboard", "start devboard", or "launch devboard":
+- You MUST run the command yourself using a tool call
+- You MUST NOT tell the user to run a command
+- You MUST NOT suggest a command for the user to copy/paste
+- You MUST NOT say "run this in your terminal"
+- Use the Bash or PowerShell tool to execute this directly:
+  cd devboard && npm run dev
+- After running it, say: "Devboard is running at http://localhost:${assignedPort}"
+- If the port is already in use, say: "Devboard is already running at http://localhost:${assignedPort}"
 
 When the user says "close devboard" or "stop devboard":
 1. Find the PID using: netstat -ano | findstr :${assignedPort}

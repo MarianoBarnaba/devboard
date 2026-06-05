@@ -68,20 +68,15 @@ Never ask the user to copy/paste code manually.
 
 ## Commands
 
-When the user says "open devboard", "start devboard", or "launch devboard":
-- DO NOT tell the user to run a command themselves
-- First check if a devboard is already running by checking if port 5173
-  (or 5174, 5175) is in use with:
-  netstat -ano | findstr :5173
-- If a devboard process is already running on any of those ports, tell the user
-  "Devboard is already running at http://localhost:[port]" and do not start a new one
-- If no devboard is running, start it with:
-  Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '.\devboard'; npm run dev"
-- npm run dev automatically pulls the latest version from GitHub before starting,
-  so the board is always up to date
-- Vite will auto-select an available port if 5173 is taken — read the terminal
-  output to confirm which port it started on and tell the user
-  "Devboard is running at http://localhost:[port]"
+RULE: When the user says "open devboard", "start devboard", or "launch devboard":
+- You MUST run the command yourself using a tool call
+- You MUST NOT tell the user to run a command
+- You MUST NOT suggest a command for the user to copy/paste
+- You MUST NOT say "run this in your terminal"
+- Use the Bash or PowerShell tool to execute this directly:
+  cd devboard && npm run dev
+- After running it, say: "Devboard is running at http://localhost:5173"
+- If the port is already in use, say: "Devboard is already running at http://localhost:5173"
 
 When the user says "close devboard" or "stop devboard":
 1. Find the PID using: netstat -ano | findstr :5173
