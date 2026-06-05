@@ -1,14 +1,15 @@
 {
   "name": "devboard",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "git pull origin master && vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "sync": "node sync.js"
   },
   "dependencies": {
     "react": "^19.2.6",

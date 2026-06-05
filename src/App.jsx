@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const VERSION = "0.6.0";
+const VERSION = "0.7.0";
 
 const COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
 
