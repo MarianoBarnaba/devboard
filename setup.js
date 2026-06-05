@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join, dirname, resolve, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -29,10 +29,21 @@ console.log(`Assigned port ${assignedPort} to this devboard instance.`);
 // --- Per-project config (drives the isolated localStorage key in App.jsx) ---
 // projectName = name of the parent project folder (e.g. "crateforge", "mailboard").
 // Written WITHOUT a BOM (Node's utf8) so the browser's fetch().json() parses cleanly.
+// Lives in public/ so Vite serves it as a plain static file in dev AND copies it
+// into dist on build (dotfiles in the project root are not reliably served).
 const projectName = basename(parentDir);
-const configFilePath = join(__dirname, '.devboard-config.json');
+const publicDir = join(__dirname, 'public');
+if (!existsSync(publicDir)) mkdirSync(publicDir);
+const configFilePath = join(publicDir, 'devboard-config.json');
 writeFileSync(configFilePath, JSON.stringify({ projectName }, null, 2) + '\n', 'utf8');
-console.log(`Wrote .devboard-config.json (projectName: "${projectName}").`);
+console.log(`Wrote public/devboard-config.json (projectName: "${projectName}").`);
+
+// Remove the legacy pre-0.7.1 dotfile so there is a single source of truth.
+const legacyConfigPath = join(__dirname, '.devboard-config.json');
+if (existsSync(legacyConfigPath)) {
+  unlinkSync(legacyConfigPath);
+  console.log('Removed legacy .devboard-config.json from the devboard root.');
+}
 
 // --- Injected CLAUDE.md block ---
 // Cross-platform: all paths are RELATIVE to the parent project root (the folder

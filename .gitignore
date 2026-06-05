@@ -1,6 +1,7 @@
 .devboard-projects
 .devboard-port
 .devboard-config.json
+public/devboard-config.json
 
 # Logs
 logs

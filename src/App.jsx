@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const VERSION = "0.7.0";
+const VERSION = "0.7.1";
 
 const COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
 
@@ -28,68 +28,10 @@ const FALLBACK_STORAGE_KEY = "devboard-default-v1";
 const storageKeyFor = (projectName) =>
   projectName ? `devboard-${projectName}-v1` : FALLBACK_STORAGE_KEY;
 
-const defaultCards = [
-  // Phase 1 — Foundation
-  { id: "p1-1", title: "Extension: Deck, Crate, Wishlist, Stats, Export",               col: "Done",    tags: ["Feature"],  phase: 1, createdAt: Date.now() - 86400000 * 60 },
-  { id: "p1-2", title: "Rebrand extension to CrateForge",                               col: "Done",    tags: ["Chore"],    phase: 1, createdAt: Date.now() - 86400000 * 58 },
-  { id: "p1-3", title: "Tauri app shell (tray, window, single-instance)",               col: "Done",    tags: ["Infra"],    phase: 1, createdAt: Date.now() - 86400000 * 56 },
-  { id: "p1-4", title: "SQLite schema init (tracks, file_links, folders, rules)",       col: "Done",    tags: ["Infra"],    phase: 1, createdAt: Date.now() - 86400000 * 54 },
-  { id: "p1-5", title: "Native messaging host (Mac + Windows)",                         col: "Done",    tags: ["Infra"],    phase: 1, createdAt: Date.now() - 86400000 * 52 },
-  { id: "p1-6", title: "Watch folder file watcher",                                     col: "Done",    tags: ["Feature"],  phase: 1, createdAt: Date.now() - 86400000 * 50 },
-  { id: "p1-7", title: "Frontend shell (Files, Rules, Settings views)",                 col: "Done",    tags: ["Design"],   phase: 1, createdAt: Date.now() - 86400000 * 48 },
-  { id: "p1-8", title: "Extension sync trigger (syncCrateToApp)",                       col: "Done",    tags: ["Feature"],  phase: 1, createdAt: Date.now() - 86400000 * 46 },
-
-  // Phase 2 — Core Features (done)
-  { id: "p2-1",  title: "Native host rebuild (Chrome lock resolved)",                                                                col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 44 },
-  { id: "p2-2",  title: "E2E Beatport → crate → SQLite verified",                                                                   col: "Done", tags: ["Testing"], phase: 2, createdAt: Date.now() - 86400000 * 42 },
-  { id: "p2-3",  title: "Diagnostic logging cleanup",                                                                                col: "Done", tags: ["Chore"],   phase: 2, createdAt: Date.now() - 86400000 * 40 },
-  { id: "p2-4",  title: "Rule engine: folder_organisation + unknown fallback",                                                       col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 38 },
-  { id: "p2-5",  title: "Remove Add to Crate from extension",                                                                        col: "Done", tags: ["Chore"],   phase: 2, createdAt: Date.now() - 86400000 * 36 },
-  { id: "p2-6",  title: "Rule builder UI (conditions, destination, mode, priority)",                                                 col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 34 },
-  { id: "p2-7",  title: "ID3 tag writing in Rust (MP3 + AIFF)",                                                                     col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 32 },
-  { id: "p2-8",  title: "pending_moves table + approve/reject commands",                                                             col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 30 },
-  { id: "p2-9",  title: "Beatport genre scraper fix (3-layer enrichment)",                                                           col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 28 },
-  { id: "p2-10", title: "Beatport release date scraping",                                                                            col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 26 },
-  { id: "p2-11", title: "Watch folder picker fix (recursive column + error handling)",                                               col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 24 },
-  { id: "p2-12", title: "Release date display (Deck, Crate, Wishlist)",                                                              col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 22 },
-  { id: "p2-13", title: "Year auto-populated from release_date (9 files)",                                                           col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 20 },
-  { id: "p2-14", title: "Confirm mode E2E (all 5 steps verified)",                                                                   col: "Done", tags: ["Testing"], phase: 2, createdAt: Date.now() - 86400000 * 18 },
-  { id: "p2-15", title: "Fix camelCase invoke args (Tauri 2)",                                                                       col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 16 },
-  { id: "p2-16", title: "File mover: auto_route_file() in watcher.rs",                                                              col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 14 },
-  { id: "p2-17", title: "Batch mode queue view (execute_batch / clear_batch)",                                                       col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 12 },
-  { id: "p2-18", title: "Bulk import scanner (bulk_import_scan command)",                                                            col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 10 },
-  { id: "p2-19", title: "Bulk import enrichment pipeline (lofty, aubio, AcoustID, Discogs)",                                        col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now() - 86400000 * 8  },
-  { id: "p2-20", title: "Beatport genre scraper — /es/ locale URL verification",                                                     col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 3  },
-  { id: "p2-20b",title: "add_to_crate / add_to_wishlist silent failure fix (events + ON CONFLICT upsert)",                          col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000 * 2  },
-  { id: "p2-28", title: "Beatport genre false-positive fix (remove GENRES keyword scan, structured data first)",                     col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now() - 86400000      },
-  { id: "p2-29", title: "Wishlist-to-crate flow (auto_match_wishlist, Find file btn, auto_move_to_crate setting)",                  col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-  { id: "p2-30", title: "Fix recursive watch subfolder scanning (set_recursive_watch DB sync)",                                      col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now()                  },
-  { id: "p2-31", title: "Fix Jaccard normaliser (stop words, bracket strip, numeric prefix removal)",                               col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now()                  },
-  { id: "p2-32", title: "Files view: scan all watch folder audio files on load (scan_watch_folders)",                               col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-  { id: "p2-33", title: "Fix subfolder scan: global read_subfolders as floor; add_watch_folder inherits global; remove_watch_folder purges file_links", col: "Done", tags: ["Bug"], phase: 2, createdAt: Date.now() },
-  { id: "p2-34", title: "scan_watch_folders: always-recursive walk + persistent debug log; confirmed 19 files found across 5 folders", col: "Done", tags: ["Bug"],  phase: 2, createdAt: Date.now()                 },
-  { id: "p2-35", title: "Files view: ↺ Refresh button re-runs scan_watch_folders",                                                  col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-  { id: "p2-36", title: "Beatport genre: async detect() + fetch track page URL + Promise cache (genreCache)",                       col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now()                  },
-  { id: "p2-37", title: "Fix import_backup: wish/url/date/done/year/artwork aliases + JSON error surfacing",                        col: "Done", tags: ["Bug"],     phase: 2, createdAt: Date.now()                  },
-  { id: "p2-38", title: "Auto-match suggestions: SUGGEST_THRESHOLD=0.22, badge+panel, auto_accept_matches setting",                col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-  { id: "p2-39", title: "Artwork column (tracks + wishlist), thumbnail in Crate+Wishlist cards, compact card layout",              col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-  { id: "p2-40", title: "Beatport mini player bar: player_state IPC, transport commands via player-command.json, Add to Wishlist/Crate", col: "Done", tags: ["Feature"], phase: 2, createdAt: Date.now()                  },
-
-  // Phase 2 — To Do
-  { id: "p2-21", title: "File matching UI (watch folder view + assign button)",         col: "To Do",   tags: ["Feature"],  phase: 2, createdAt: Date.now() - 86400000 * 6 },
-  { id: "p2-22", title: "read_subfolders global toggle cleanup",                        col: "To Do",   tags: ["Chore"],    phase: 2, createdAt: Date.now() - 86400000 * 5 },
-  { id: "p2-23", title: "In-app bug report function",                                   col: "To Do",   tags: ["Feature"],  phase: 2, createdAt: Date.now() - 86400000 * 4 },
-  { id: "p2-24", title: "track_detected double-fire deduplication",                     col: "To Do",   tags: ["Bug"],      phase: 2, createdAt: Date.now() - 86400000 * 3 },
-  { id: "p2-25", title: "Audit non-Beatport scraper metadata coverage",                 col: "To Do",   tags: ["Research"], phase: 2, createdAt: Date.now() - 86400000 * 2 },
-  { id: "p2-26", title: "Traxsource scraper — release date + year support",             col: "To Do",   tags: ["Feature"],  phase: 2, createdAt: Date.now() - 86400000 },
-  { id: "p2-27", title: "Full metadata parity across all supported platforms",          col: "To Do",   tags: ["Feature"],  phase: 2, createdAt: Date.now() },
-
-  // Phase 3 — Distribution
-  { id: "p3-1", title: "Cloud sync (Dropbox, Google Drive, NAS)",                      col: "Backlog", tags: ["Feature"],  phase: 3, createdAt: Date.now() },
-  { id: "p3-2", title: "Licensing model (one-time or subscription)",                   col: "Backlog", tags: ["Research"], phase: 3, createdAt: Date.now() },
-  { id: "p3-3", title: "Distribution (direct download + App Store eval)",              col: "Backlog", tags: ["Infra"],    phase: 3, createdAt: Date.now() },
-  { id: "p3-4", title: "Landing page + waitlist",                                      col: "Backlog", tags: ["Design"],   phase: 3, createdAt: Date.now() },
-];
+// New project boards start EMPTY. (Pre-0.7.1 builds shipped a snapshot of a
+// real project's board here, so every fresh board looked like that project
+// regardless of storage-key isolation.)
+const defaultCards = [];
 
 function Tag({ label }) {
   const t = TAG_OPTIONS.find(t => t.label === label);
@@ -406,18 +348,26 @@ export default function DevBoard() {
     (async () => {
       // Resolve the project name from config before loading, so we read from the
       // correct namespaced key on first paint (no flash of the fallback board).
+      // Canonical location is public/devboard-config.json (served by Vite in dev
+      // AND copied into dist on build); the dotfile in the devboard root is the
+      // legacy pre-0.7.1 location, kept as a fallback for clones that pulled new
+      // code but haven't re-run `npm run setup` yet.
       let name = null;
-      try {
-        const res = await fetch("/.devboard-config.json", { cache: "no-store" });
-        if (res.ok) {
+      for (const path of ["/devboard-config.json", "/.devboard-config.json"]) {
+        try {
+          const res = await fetch(path, { cache: "no-store" });
+          if (!res.ok) continue;
           const cfg = await res.json();
           if (cfg && typeof cfg.projectName === "string" && cfg.projectName.trim()) {
             name = cfg.projectName.trim();
+            break;
           }
-        }
-      } catch {}
+        } catch {}
+      }
       if (cancelled) return;
       setProjectName(name);
+      console.log("Project name:", name);
+      console.log("Storage key:", storageKeyFor(name));
 
       const saved = localStorage.getItem(storageKeyFor(name));
       if (saved) try {
