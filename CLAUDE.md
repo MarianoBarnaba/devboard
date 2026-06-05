@@ -50,6 +50,10 @@ aren't already there.
 - Board data is stored in localStorage under the key "devboard-v1"
 - Source is in src/App.jsx
 - Sync all projects with: npm run sync
+- Set up a new project with: npm run setup
+  - Injects the ## Devboard block into the parent project's CLAUDE.md
+  - Automatically registers the project path in .devboard-projects for auto-sync
+  - No manual steps needed — one command does everything
 
 ## Updating the board
 When the user asks to update the board:
@@ -65,10 +69,13 @@ Never ask the user to copy/paste code manually.
 ## Commands
 
 When the user says "open devboard", "start devboard", or "launch devboard":
-1. cd into the devboard folder (use the path relative to the current project, 
-   or F:\GitHub\devboard if running standalone)
-2. Run npm run dev
-3. Tell the user the app is running at http://localhost:5173
+1. Use PowerShell
+2. Find the devboard folder relative to the current project root
+3. Run exactly: Set-Location ".\devboard"; npm run dev
+4. If that fails, try: Set-Location "F:\GitHub\devboard"; npm run dev
+5. Tell the user to open http://localhost:5173 in their browser
+6. Do not run it as a background process — run it as a foreground process
+   so the user can see the output and stop it with Ctrl+C
 
 When the user says "close devboard" or "stop devboard":
 1. Kill the process running on port 5173
