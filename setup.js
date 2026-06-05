@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(join(__dirname, '..'));
@@ -34,7 +35,11 @@ Start it by saying: "open devboard"
 
 RULE: When the user says "open devboard", "start devboard", or "launch devboard":
 - You MUST start the dev server yourself, do not ask the user to do it
-- Use this exact PowerShell command to launch it in a separate window:
+- First check if node_modules exists in the devboard folder:
+  Test-Path "${join(parentDir, 'devboard', 'node_modules')}"
+- If node_modules is missing, run npm install first:
+  Start-Process powershell -ArgumentList "-NoExit -Command \`"cd ${join(parentDir, 'devboard')}; npm install\`"" -Wait
+- Then launch it in a separate window:
   Start-Process powershell -ArgumentList "-NoExit -Command \`"cd ${join(parentDir, 'devboard')}; npm run dev\`""
 - After running it, say: "Devboard is running at http://localhost:${assignedPort}"
 - Do NOT open the browser — just tell the user the URL
@@ -68,6 +73,14 @@ if (!existsSync(claudeMdPath)) {
     writeFileSync(claudeMdPath, contents + devboardBlock, 'utf8');
     console.log(`Appended devboard instructions to ${claudeMdPath}.`);
   }
+}
+
+// --- Run npm install in devboard folder ---
+try {
+  execSync('npm install', { cwd: __dirname, stdio: 'inherit' });
+  console.log('npm install completed successfully.');
+} catch {
+  console.error('npm install failed — run it manually in the devboard folder.');
 }
 
 // --- Register parent project path in .devboard-projects ---

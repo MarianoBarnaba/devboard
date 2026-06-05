@@ -70,7 +70,11 @@ Never ask the user to copy/paste code manually.
 
 RULE: When the user says "open devboard", "start devboard", or "launch devboard":
 - You MUST start the dev server yourself, do not ask the user to do it
-- Use this exact PowerShell command to launch it in a separate window:
+- First check if node_modules exists in the devboard folder:
+  Test-Path ".\devboard\node_modules"
+- If node_modules is missing, run npm install first:
+  Start-Process powershell -ArgumentList "-NoExit -Command `"cd F:\github\mailboard\devboard; npm install`"" -Wait
+- Then launch it in a separate window:
   Start-Process powershell -ArgumentList "-NoExit -Command `"cd F:\github\mailboard\devboard; npm run dev`""
 - If the project path is different, use the path of the current project's devboard folder
 - After running it, say: "Devboard is running at http://localhost:5173"
