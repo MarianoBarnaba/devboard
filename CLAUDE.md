@@ -61,3 +61,24 @@ When the user asks to update the board:
 6. End the response with the commit summary block
 
 Never ask the user to copy/paste code manually.
+
+## Commands
+
+When the user says "open devboard", "start devboard", or "launch devboard":
+1. cd into the devboard folder (use the path relative to the current project, 
+   or F:\GitHub\devboard if running standalone)
+2. Run npm run dev
+3. Tell the user the app is running at http://localhost:5173
+
+When the user says "close devboard" or "stop devboard":
+1. Kill the process running on port 5173
+
+### Sync behavior
+After every `git push` from the devboard repo, a post-push hook automatically runs
+`git submodule update --remote devboard` in each project listed in .devboard-projects,
+keeping all linked projects up to date.
+
+Collaborators who don't have the hook can sync manually:
+```
+git submodule update --remote devboard
+```
