@@ -69,16 +69,21 @@ Never ask the user to copy/paste code manually.
 ## Commands
 
 When the user says "open devboard", "start devboard", or "launch devboard":
-1. Use PowerShell
-2. Find the devboard folder relative to the current project root
-3. Run exactly: Set-Location ".\devboard"; npm run dev
-4. If that fails, try: Set-Location "F:\GitHub\devboard"; npm run dev
-5. Tell the user to open http://localhost:5173 in their browser
-6. Do not run it as a background process — run it as a foreground process
-   so the user can see the output and stop it with Ctrl+C
+- DO NOT tell the user to run a command themselves
+- First check if a devboard is already running by checking if port 5173
+  (or 5174, 5175) is in use with:
+  netstat -ano | findstr :5173
+- If a devboard process is already running on any of those ports, tell the user
+  "Devboard is already running at http://localhost:[port]" and do not start a new one
+- If no devboard is running, start it with:
+  Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '.\devboard'; npm run dev"
+- Vite will auto-select an available port if 5173 is taken — read the terminal
+  output to confirm which port it started on and tell the user
+  "Devboard is running at http://localhost:[port]"
 
 When the user says "close devboard" or "stop devboard":
-1. Kill the process running on port 5173
+1. Find the PID using: netstat -ano | findstr :5173
+2. Kill it with: Stop-Process -Id [PID] -Force
 
 ### Sync behavior
 After every `git push` from the devboard repo, a post-push hook automatically runs
