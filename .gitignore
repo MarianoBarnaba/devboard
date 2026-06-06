@@ -2,6 +2,7 @@
 .devboard-port
 .devboard-config.json
 public/devboard-config.json
+public/devboard-cards.json
 
 # Logs
 logs

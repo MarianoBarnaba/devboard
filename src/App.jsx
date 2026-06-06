@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const VERSION = "0.7.1";
+const VERSION = "0.9.0";
 
 const COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
 
@@ -32,6 +32,22 @@ const storageKeyFor = (projectName) =>
 // real project's board here, so every fresh board looked like that project
 // regardless of storage-key isolation.)
 const defaultCards = [];
+
+// Merge saved UI state with the per-project seed file (public/devboard-cards.json,
+// written by setup.js and curated by Claude from the project's CLAUDE.md/roadmap).
+// Cards are matched by id; when both sides have one, the newer updatedAt wins —
+// so Claude can move/edit cards through the file, and UI edits stick otherwise.
+// File cards never delete saved cards; deletion happens in the UI.
+const mergeCards = (savedCards, fileCards) => {
+  const byId = new Map(savedCards.map(c => [c.id, c]));
+  for (const fc of fileCards) {
+    const existing = byId.get(fc.id);
+    if (!existing || (fc.updatedAt ?? 0) > (existing.updatedAt ?? 0)) {
+      byId.set(fc.id, { ...existing, ...fc });
+    }
+  }
+  return [...byId.values()];
+};
 
 function Tag({ label }) {
   const t = TAG_OPTIONS.find(t => t.label === label);
@@ -369,11 +385,27 @@ export default function DevBoard() {
       console.log("Project name:", name);
       console.log("Storage key:", storageKeyFor(name));
 
+      // Per-project board data curated from the project's CLAUDE.md / roadmap
+      // (by setup.js on first run, by Claude afterwards). Gitignored, so it
+      // never leaks into other projects' boards via the shared repo.
+      let fileCards = [];
+      try {
+        const res = await fetch("/devboard-cards.json", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) fileCards = data.filter(c => c && c.id && c.title);
+        }
+      } catch {}
+
+      let savedCards = [];
       const saved = localStorage.getItem(storageKeyFor(name));
       if (saved) try {
         const parsed = JSON.parse(saved);
-        setCards(parsed.map(c => ({ phase: 2, ...c })));
+        if (Array.isArray(parsed)) savedCards = parsed;
       } catch {}
+
+      if (cancelled) return;
+      setCards(mergeCards(savedCards, fileCards).map(c => ({ phase: 2, ...c })));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -385,10 +417,12 @@ export default function DevBoard() {
   };
 
   const handleSave = ({ title, col, tags, phase }) => {
+    // updatedAt drives the merge with devboard-cards.json (newer side wins),
+    // so every UI edit must stamp it.
     if (modal.mode === "new") {
-      persist([...cards, { id: `c${Date.now()}`, title, col, tags, phase: phase ?? 2, createdAt: Date.now() }]);
+      persist([...cards, { id: `c${Date.now()}`, title, col, tags, phase: phase ?? 2, createdAt: Date.now(), updatedAt: Date.now() }]);
     } else {
-      persist(cards.map(c => c.id === modal.card.id ? { ...c, title, col, tags, phase: phase ?? 2 } : c));
+      persist(cards.map(c => c.id === modal.card.id ? { ...c, title, col, tags, phase: phase ?? 2, updatedAt: Date.now() } : c));
     }
     setModal(null);
   };

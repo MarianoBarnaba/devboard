@@ -1,7 +1,7 @@
 # Devboard
 
 This is a portable kanban board app for tracking project progress.
-Current version: 0.7.1
+Current version: 0.9.0
 
 ## Version tracking
 - Version format: MAJOR.MINOR.PATCH
@@ -49,8 +49,19 @@ aren't already there.
 
 ## Usage
 - App runs with: npm run dev (from this folder)
-- Board data is stored in localStorage under the key "devboard-v1"
-- Source is in src/App.jsx
+- Board data lives in two layers, merged by newest updatedAt per card:
+  - public/devboard-cards.json — per-project seed/curated cards (gitignored;
+    written by setup.js from the parent CLAUDE.md's checkboxes, maintained by
+    Claude in each project afterwards)
+  - localStorage under "devboard-[projectName]-v1" — the user's in-browser edits
+    (projectName comes from public/devboard-config.json, written by setup.js)
+- Source is in src/App.jsx — never put project card data in this file; it is
+  shared across all projects via git
+- Manager control panel: npm run manager (or open manager/index.html directly)
+  - Lists all running devboard instances (port-scans 5173+ over HTTP)
+  - Each instance registers itself in ~/.devboard-registry.json on start and
+    deregisters on stop (override location with the DEVBOARD_REGISTRY env var)
+  - The dev server is server.js (wraps Vite; adds the /api/manager/* endpoints)
 - Sync all projects with: npm run sync
 - Set up a new project with: npm run setup
   - Injects the ## Devboard block into the parent project's CLAUDE.md
@@ -97,12 +108,21 @@ RULE: When the user says "open devboard", "start devboard", or "launch devboard"
 
 When the user says "close devboard" or "stop devboard":
 1. Find the actual port first (parse the log as above, or check the URL you reported)
-2. Find the PID:
-   - Windows: netstat -ano | findstr :<port>
-   - macOS/Linux: lsof -ti tcp:<port>
-3. Kill it:
-   - Windows: Stop-Process -Id <PID> -Force
-   - macOS/Linux: kill <PID>
+2. Prefer the graceful stop endpoint (deregisters from the manager registry):
+   - Windows: Invoke-RestMethod -Method Delete -Uri "http://localhost:<port>/api/manager/stop"
+   - macOS/Linux: curl -X DELETE http://localhost:<port>/api/manager/stop
+3. Only if that fails, kill the process:
+   - Windows: netstat -ano | findstr :<port>  then  Stop-Process -Id <PID> -Force
+   - macOS/Linux: kill $(lsof -ti tcp:<port>)
+
+RULE: When the user says "open manager" or "show running boards":
+- Open manager/index.html (relative to this folder) in the default browser:
+  - Windows (PowerShell): Start-Process ".\manager\index.html"
+  - macOS: open ./manager/index.html
+  - Linux: xdg-open ./manager/index.html
+- Or run: npm run manager
+- It is a standalone static page — no server needed; it discovers running
+  boards itself by probing localhost ports 5173+ for /api/manager/info
 
 ### Sync behavior
 The board updates automatically every time it starts — `npm run dev` runs `git pull`

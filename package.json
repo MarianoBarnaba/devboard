@@ -1,10 +1,11 @@
 {
   "name": "devboard",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
-    "dev": "git pull origin master && vite",
+    "dev": "git pull origin master && node server.js",
+    "manager": "node manager/open.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

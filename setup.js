@@ -45,6 +45,36 @@ if (existsSync(legacyConfigPath)) {
   console.log('Removed legacy .devboard-config.json from the devboard root.');
 }
 
+// --- Seed board cards from the parent project's CLAUDE.md (best effort) ---
+// Markdown checkboxes become cards: "- [ ]" → To Do, "- [x]" → Done. Claude
+// curates this file afterwards (see the injected block below), so we only
+// create it when missing — an existing curated board is never clobbered.
+// Gitignored: board data is per-project and must not travel through the repo.
+const cardsFilePath = join(publicDir, 'devboard-cards.json');
+if (existsSync(cardsFilePath)) {
+  console.log('Skipped: public/devboard-cards.json already exists.');
+} else {
+  const seedCards = [];
+  if (existsSync(claudeMdPath)) {
+    const md = readFileSync(claudeMdPath, 'utf8');
+    const checkbox = /^[ \t]*[-*] \[([ xX])\] +(.+)$/gm;
+    let m;
+    while ((m = checkbox.exec(md)) !== null) {
+      seedCards.push({
+        id: `seed-${seedCards.length + 1}`,
+        title: m[2].trim(),
+        col: m[1] === ' ' ? 'To Do' : 'Done',
+        tags: [],
+        phase: 2,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+  }
+  writeFileSync(cardsFilePath, JSON.stringify(seedCards, null, 2) + '\n', 'utf8');
+  console.log(`Wrote public/devboard-cards.json (${seedCards.length} card(s) seeded from CLAUDE.md checkboxes).`);
+}
+
 // --- Injected CLAUDE.md block ---
 // Cross-platform: all paths are RELATIVE to the parent project root (the folder
 // that contains ./devboard). Launch instructions branch on the host OS.
@@ -80,20 +110,40 @@ RULE: When the user says "open devboard", "start devboard", or "launch devboard"
 
 When the user says "close devboard" or "stop devboard":
 1. Determine the actual port (parse the log above, or use the URL you reported)
-2. Find the PID:
-   - Windows: netstat -ano | findstr :<port>
-   - macOS/Linux: lsof -ti tcp:<port>
-3. Kill it:
-   - Windows: Stop-Process -Id <PID> -Force
-   - macOS/Linux: kill <PID>
+2. Prefer the graceful stop endpoint (deregisters from the manager registry):
+   - Windows: Invoke-RestMethod -Method Delete -Uri "http://localhost:<port>/api/manager/stop"
+   - macOS/Linux: curl -X DELETE http://localhost:<port>/api/manager/stop
+3. Only if that fails, kill the process:
+   - Windows: netstat -ano | findstr :<port>  then  Stop-Process -Id <PID> -Force
+   - macOS/Linux: kill $(lsof -ti tcp:<port>)
+
+When the user says "open manager" or "show running boards":
+- Open ./devboard/manager/index.html in the default browser:
+  - Windows (PowerShell): Start-Process ".\\devboard\\manager\\index.html"
+  - macOS: open ./devboard/manager/index.html
+- It lists every running devboard instance with open/stop controls
 
 When the user asks to update the board, or when we complete or start a task:
-1. Read ./devboard/src/App.jsx
-2. Update the relevant cards (move columns, add, edit, or delete cards)
-3. Save the file
+1. Read ./devboard/public/devboard-cards.json (the per-project board data)
+2. Add, edit, move (change "col"), or delete card objects as needed
+   - Card shape: { id, title, col, tags, phase, createdAt, updatedAt }
+   - col: "Backlog" | "To Do" | "In Progress" | "Review" | "Done"
+   - tags: any of ["Feature","Bug","Chore","Design","Infra","Research","Testing"]
+   - phase: 1, 2, or 3 (roadmap grouping)
+   - ALWAYS set updatedAt to the current Unix time in ms on every card you touch.
+     The app merges this file with the user's in-browser edits; the side with
+     the newer updatedAt wins, so a stale timestamp means your change is ignored.
+3. Save the file — the board picks it up on the next load/refresh
 4. Tell the user what changed on the board
 
-Keep the board in sync with any roadmap or task tracking files in this project.
+If devboard-cards.json is missing or empty, seed it: read this project's
+CLAUDE.md and any roadmap/task-tracking files and create cards for the tasks
+found there (done work → "Done", current work → "To Do"/"In Progress",
+future ideas → "Backlog").
+
+Do NOT edit ./devboard/src/App.jsx to change board content — that file is the
+app's shared source code (synced across all projects via git); project cards
+in it would leak onto every other project's board.
 Never ask the user to copy/paste anything manually. Always edit files directly.
 
 The board updates automatically every time it starts via git pull inside npm run dev.
@@ -105,8 +155,14 @@ if (!existsSync(claudeMdPath)) {
   console.log(`Created ${claudeMdPath} with devboard instructions.`);
 } else {
   const contents = readFileSync(claudeMdPath, 'utf8');
-  if (contents.includes('## Devboard')) {
-    console.log(`Skipped: ${claudeMdPath} already contains a ## Devboard section.`);
+  // Replace an existing ## Devboard section (everything up to the next h2 or
+  // EOF) so projects set up with older versions get the current instructions —
+  // stale blocks tell Claude to put board content in src/App.jsx, which leaks
+  // cards onto every project's board.
+  const blockRegex = /\n?## Devboard[\s\S]*?(?=\n## |$)/;
+  if (blockRegex.test(contents)) {
+    writeFileSync(claudeMdPath, contents.replace(blockRegex, devboardBlock), 'utf8');
+    console.log(`Refreshed the ## Devboard section in ${claudeMdPath}.`);
   } else {
     writeFileSync(claudeMdPath, contents + devboardBlock, 'utf8');
     console.log(`Appended devboard instructions to ${claudeMdPath}.`);
